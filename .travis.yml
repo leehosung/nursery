@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+- '0.11'
+- '0.10'
+deploy:
+  provider: s3
+  access_key_id: AKIAJDI7SQ4QUQSODDBA
+  secret_access_key:
+    secure: KXaa46kpynMJm/6yz/558mjXJlViYt6jN6U3sGaR2/e//ITrzI06l/P0/JkM9SSs7NA2MCkShMZRz43sKnQhr8wcCuR6q9O88xkASievKMzBXRM2gCmGa2vGB4+ubVRL+lGGj1mWpP8iRqSaolBD9L7VBu9tpun4puo9ZZqh25w=
+  bucket: nursery.novice.io
+  acl: ''
+  on:
+    repo: leehosung/nursery
