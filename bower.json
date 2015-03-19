@@ -1,0 +1,23 @@
+{
+  "name": "nursery",
+  "version": "0.1.0",
+  "homepage": "https://github.com/leehosung/nursery",
+  "authors": [
+    "Lee Ho Sung <lee.ho.sung@gmail.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.4",
+    "font-awesome": "~4.3.0",
+    "jquery": "~2.1.3",
+    "react": "~0.13.1"
+  }
+}
