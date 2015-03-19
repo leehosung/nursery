@@ -8,5 +8,7 @@ deploy:
   secret_access_key:
     secure: KXaa46kpynMJm/6yz/558mjXJlViYt6jN6U3sGaR2/e//ITrzI06l/P0/JkM9SSs7NA2MCkShMZRz43sKnQhr8wcCuR6q9O88xkASievKMzBXRM2gCmGa2vGB4+ubVRL+lGGj1mWpP8iRqSaolBD9L7VBu9tpun4puo9ZZqh25w=
   bucket: nursery.novice.io
+  region: ap-northeast-1
+  endpoint: s3-ap-northeast-1.amazonaws.com
   on:
     repo: leehosung/nursery
