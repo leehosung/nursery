@@ -50,6 +50,69 @@ var Header = React.createClass({
 });
 
 var Map = React.createClass({
+
+  getInitialState: function() {
+      return {nurseries: []};
+  },
+
+  drawMarker: function() {
+
+    var map = this.state.map;
+
+    // 마커 이미지의 이미지 주소입니다
+    var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+
+    // 마커 이미지의 이미지 크기 입니다
+    var imageSize = new daum.maps.Size(24, 35);
+
+    // 마커 이미지를 생성합니다
+    var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
+
+    // 지도의 현재 영역을 얻어옵니다
+    var bounds = map.getBounds();
+
+    // 영역의 남서쪽 좌표를 얻어옵니다
+    var swLatLng = bounds.getSouthWest();
+
+    // 영역의 북동쪽 좌표를 얻어옵니다
+    var neLatLng = bounds.getNorthEast();
+
+
+    $.each(this.state.nurseries, function(idx, nursery){
+        var marker = new daum.maps.Marker({
+            map: map, // 마커를 표시할 지도
+            position: new daum.maps.LatLng(nursery.lat, nursery.lng),
+            title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+            image : markerImage // 마커 이미지
+        });
+    });
+  },
+
+  loadNurseriesFromServer: function() {
+      $.ajax({
+          url: this.props.url,
+          dataType: 'json',
+          success: function(data) {
+              this.setState({nurseries:data.nursery});
+              this.drawMarker();
+          }.bind(this),
+          error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+          }.bind(this)
+      });
+  },
+
+  componentDidMount: function() {
+    var container = document.getElementById('map');
+    var options = {
+      center: new daum.maps.LatLng(37.5639734199, 127.029808732),
+      level: 4
+    };
+    var map = new daum.maps.Map(container, options);
+    this.setState({map:map});
+    this.loadNurseriesFromServer();
+  },
+
   render: function() {
     var style={width:"1000px", height: "800px"};
     return (
@@ -59,51 +122,8 @@ var Map = React.createClass({
         </div>
       </div>
     )
-  },
-  componentDidMount: function() {
-    var container = document.getElementById('map');
-    var options = {
-      center: new daum.maps.LatLng(37.5639734199, 127.029808732),
-      level: 4
-    };
-    var map = new daum.maps.Map(container, options);
+  }
 
-    // 마커를 표시할 위치와 title 객체 배열입니다
-    var positions = [
-        {
-            title: '구립 홍익어린이집',
-            latlng: new daum.maps.LatLng(37.5678739341, 127.025527095)
-        },
-        {
-            title: '구립 도선어린이집',
-            latlng: new daum.maps.LatLng(37.5660995656, 127.030610961)
-        },
-        {
-            title: '구립 왕도어린이집',
-            latlng: new daum.maps.LatLng(37.5654831494, 127.031126848)
-        }
-    ]
-
-    // 마커 이미지의 이미지 주소입니다
-    var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-
-    for (var i = 0; i < positions.length; i ++) {
-
-        // 마커 이미지의 이미지 크기 입니다
-        var imageSize = new daum.maps.Size(24, 35);
-
-        // 마커 이미지를 생성합니다
-        var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
-
-        // 마커를 생성합니다
-        var marker = new daum.maps.Marker({
-            map: map, // 마커를 표시할 지도
-            position: positions[i].latlng, // 마커를 표시할 위치
-            title : positions[i].title, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
-            image : markerImage // 마커 이미지
-        });
-      }
-    }
 });
 
 var Content = React.createClass({
@@ -111,7 +131,7 @@ var Content = React.createClass({
     return (
       <div id="content">
         <Navbar />
-        <Map />
+        <Map url="./data/nursery.json" />
       </div>
     )
   }
