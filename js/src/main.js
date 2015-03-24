@@ -51,13 +51,7 @@ var Header = React.createClass({
 
 var Map = React.createClass({
 
-  getInitialState: function() {
-      return {nurseries: []};
-  },
-
-  drawMarker: function() {
-
-    var map = this.state.map;
+  drawMarker: function(map) {
 
     // 마커 이미지의 이미지 주소입니다
     var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
@@ -77,29 +71,25 @@ var Map = React.createClass({
     // 영역의 북동쪽 좌표를 얻어옵니다
     var neLatLng = bounds.getNorthEast();
 
-
-    $.each(this.state.nurseries, function(idx, nursery){
+    var onClickMarker = this.props.onClickMarker;
+    $.each(this.props.nurseries, function(idx, nursery){
         var marker = new daum.maps.Marker({
-            map: map, // 마커를 표시할 지도
-            position: new daum.maps.LatLng(nursery.lat, nursery.lng),
-            title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
-            image : markerImage // 마커 이미지
+          map: map, // 마커를 표시할 지도
+          position: new daum.maps.LatLng(nursery.lat, nursery.lng),
+          clickable: true,
+          title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+          image : markerImage // 마커 이미지
+        });
+
+        daum.maps.event.addListener(marker, 'click', function(){
+          onClickMarker(nursery)
         });
     });
   },
 
-  loadNurseriesFromServer: function() {
-      $.ajax({
-          url: this.props.url,
-          dataType: 'json',
-          success: function(data) {
-              this.setState({nurseries:data.nursery});
-              this.drawMarker();
-          }.bind(this),
-          error: function(xhr, status, err) {
-              console.error(this.props.url, status, err.toString());
-          }.bind(this)
-      });
+  componentDidUpdate: function() {
+    var map = this.state.map;
+    this.drawMarker(map);
   },
 
   componentDidMount: function() {
@@ -110,7 +100,6 @@ var Map = React.createClass({
     };
     var map = new daum.maps.Map(container, options);
     this.setState({map:map});
-    this.loadNurseriesFromServer();
   },
 
   render: function() {
@@ -123,18 +112,38 @@ var Map = React.createClass({
       </div>
     )
   }
-
 });
 
 var Content = React.createClass({
+  getInitialState: function() {
+    return {nurseries: []};
+  },
+  onClickMarker: function(nursery) {
+    console.log(nursery);
+  },
+  loadNurseriesFromServer: function() {
+    $.ajax({
+        url: this.props.url,
+        dataType: 'json',
+        success: function(data) {
+            this.setState({nurseries:data.nursery});
+        }.bind(this),
+        error: function(xhr, status, err) {
+            console.error(this.props.url, status, err.toString());
+        }.bind(this)
+    });
+  },
+  componentDidMount: function() {
+    this.loadNurseriesFromServer();
+  },
   render: function() {
     return (
       <div id="content">
         <Navbar />
-        <Map url="./data/nursery.json" />
+        <Map onClickMarker={this.onClickMarker} nurseries={this.state.nurseries} />
       </div>
     )
   }
 });
 
-React.render(<Content />, document.getElementById('content'));
+React.render(<Content url="./data/nursery.json" />, document.getElementById('content'));
