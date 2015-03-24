@@ -1,53 +1,20 @@
-var Navbar = React.createClass({
+var Sidebar = React.createClass({
   render: function() {
     return (
-      <nav className="navbar navbar-default navbar-fixed-top">
-        <div className="container">
-          <div className="navbar-header page-scroll">
-            <button type="button" className="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-              <span className="sr-only">Toggle navigation</span>
-              <span className="icon-bar"></span>
-              <span className="icon-bar"></span>
-              <span className="icon-bar"></span>
-            </button>
-              <a className="navbar-brand" href="#page-top">우리 아이를 어디에?</a>
-          </div>
-          <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul className="nav navbar-nav navbar-right">
-              <li className="hidden">
-                <a href="#page-top"></a>
-              </li>
-              <li className="page-scroll">
-                <a href="#search">어린이집 찾기</a>
-              </li>
-              <li className="page-scroll">
-                <a href="#statistics">통계</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
+      <div id="sidebar-wrapper">
+        <ul className="sidebar-nav">
+          <li className="sidebar-brand">
+              <a href="#">어린이집 찾기</a>
+          </li>
+          <li>
+              <a href="#">필터</a>
+          </li>
+        </ul>
+      </div>
     )
   }
 });
 
-var Header = React.createClass({
-  render: function() {
-    return (
-      <header>
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="intro-text">
-                <span className="name">편하게 어린이집 찾기</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-});
 
 var Map = React.createClass({
 
@@ -103,23 +70,65 @@ var Map = React.createClass({
   },
 
   render: function() {
-    var style={width:"1000px", height: "800px"};
+    var style={width:"100%", height: "800px"};
     return (
-      <div className="row">
-        <div className="col-lg-8">
-          <div id="map" style={style}></div>
-        </div>
+      <div className="col-lg-8">
+        <div id="map" style={style}></div>
       </div>
     )
   }
 });
 
+var NurseryDetail = React.createClass({
+  getDefaultProps: function() {
+    return {
+      nursery: null
+    }
+  },
+  render: function() {
+    if (this.props.nursery !== null) {
+      var table =
+        <table className="table table-striped table-bordered table-hover table-condensed">
+          <tr><td>이름</td><td>{this.props.nursery.name}</td></tr>
+          <tr><td>종류</td><td>{this.props.nursery.type}</td></tr>
+          <tr><td>주소</td><td>{this.props.nursery.address}</td></tr>
+          <tr><td>우편번호</td><td>{this.props.nursery.zip_code}</td></tr>
+          <tr><td>위도</td><td>{this.props.nursery.lat}</td></tr>
+          <tr><td>경도</td><td>{this.props.nursery.lng}</td></tr>
+        </table>
+    } else {
+      var table = ""
+    }
+    return (
+      <div className="col-lg-4">
+        {table}
+      </div>
+    )
+  }
+});
+
+var MenuToggle = React.createClass({
+
+  render: function() {
+    return(
+      <a onClick={this.toggle} className="btn btn-default" id="menu-toggle">Toggle Menu</a>
+    )
+  },
+
+  toggle: function(e) {
+    e.preventDefault();
+    $("#wrapper").toggleClass("toggled");
+  }
+});
+
 var Content = React.createClass({
   getInitialState: function() {
-    return {nurseries: []};
+    return {
+      nurseries: []
+    };
   },
   onClickMarker: function(nursery) {
-    console.log(nursery);
+    this.setState({selected_nursery: nursery});
   },
   loadNurseriesFromServer: function() {
     $.ajax({
@@ -138,9 +147,15 @@ var Content = React.createClass({
   },
   render: function() {
     return (
-      <div id="content">
-        <Navbar />
-        <Map onClickMarker={this.onClickMarker} nurseries={this.state.nurseries} />
+      <div id="wrapper">
+        <Sidebar />
+        <div id="page-content-wrapper">
+          <div className="row">
+            <Map onClickMarker={this.onClickMarker} nurseries={this.state.nurseries} />
+            <MenuToggle />
+            <NurseryDetail nursery={this.state.selected_nursery} />
+          </div>
+        </div>
       </div>
     )
   }
