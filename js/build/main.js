@@ -15,6 +15,60 @@ var Sidebar = React.createClass({displayName: "Sidebar",
   }
 });
 
+
+var Search = React.createClass({displayName: "Search",
+
+   searchPlaces: function(e) {
+    e.preventDefault();
+    var keyword = React.findDOMNode(this.refs.keyword).value.trim();
+
+    if (!keyword.replace(/^\s+|\s+$/g, '')) {
+      alert('키워드를 입력해주세요!');
+      return false;
+    }
+
+    // 장소검색 객체를 통해 키워드로 장소검색을 요청합니다
+    this.ps.keywordSearch(keyword, this.placesSearchCB);
+  },
+
+  placesSearchCB: function(status, data, pagination) {
+    if (status === daum.maps.services.Status.OK) {
+      var places = data.places,
+          bounds = new daum.maps.LatLngBounds();
+
+      for(var i=0; i< places.length; i++){
+        var placePosition = new daum.maps.LatLng(places[i].latitude, places[i].longitude);
+        // 검색된 장소 위치를 기준으로 지도 범위를 재설정하기위해
+        // LatLngBounds 객체에 좌표를 추가합니다
+        bounds.extend(placePosition);
+      }
+      this.props.onBoundsChanged(bounds);
+    } else if (status === daum.maps.services.Status.ZERO_RESULT) {
+      alert('검색 결과가 존재하지 않습니다.');
+      return;
+    } else if (status === daum.maps.services.Status.ERROR) {
+      alert('검색 결과 중 오류가 발생했습니다.');
+      return;
+    }
+  },
+
+  componentDidMount: function() {
+    // 장소 검색 객체를 생성합니다
+    this.ps = new daum.maps.services.Places();
+  },
+
+  render: function() {
+    return (
+      React.createElement("div", null, 
+        React.createElement("form", {onSubmit: this.searchPlaces}, 
+          React.createElement("input", {type: "text", placeholder: "강남역", ref: "keyword", size: "15"}), 
+          React.createElement("input", {type: "submit"})
+        )
+      )
+    )
+  }
+});
+
 var Map = React.createClass({displayName: "Map",
 
   inMap: function(lat, lng) {
@@ -83,16 +137,24 @@ var Map = React.createClass({displayName: "Map",
       level: 4
     };
     var map = new daum.maps.Map(container, options);
+
     var zoomControl = new daum.maps.ZoomControl();
     map.addControl(zoomControl, daum.maps.ControlPosition.RIGHT);
+
     daum.maps.event.addListener(map, 'zoom_changed', this.refreshMarker);
     daum.maps.event.addListener(map, 'dragend', this.refreshMarker);
+
     this.map = map;
     this.markers = new HashTable();
   },
 
   render: function() {
     var style={width:"100%", height: "800px"};
+
+    if(this.props.bounds){
+      this.map.setBounds(this.props.bounds);
+    }
+
     return (
       React.createElement("div", {className: "col-lg-8"}, 
         React.createElement("div", {id: "map", style: style})
@@ -158,11 +220,15 @@ var MenuToggle = React.createClass({displayName: "MenuToggle",
 var Content = React.createClass({displayName: "Content",
   getInitialState: function() {
     return {
-      nurseries: []
+      nurseries: [],
+      bounds: null
     };
   },
   onClickMarker: function(nursery) {
     this.setState({selected_nursery: nursery});
+  },
+  onBoundsChanged: function(bounds) {
+    this.setState({bounds: bounds});
   },
   loadNurseriesFromServer: function() {
     $.ajax({
@@ -185,8 +251,9 @@ var Content = React.createClass({displayName: "Content",
         React.createElement(Sidebar, null), 
         React.createElement("div", {id: "page-content-wrapper"}, 
           React.createElement("div", {className: "row"}, 
-            React.createElement(Map, {onClickMarker: this.onClickMarker, nurseries: this.state.nurseries}), 
+            React.createElement(Map, {onClickMarker: this.onClickMarker, nurseries: this.state.nurseries, bounds: this.state.bounds}), 
             React.createElement(MenuToggle, null), 
+            React.createElement(Search, {onBoundsChanged: this.onBoundsChanged}), 
             React.createElement(NurseryDetail, {nursery: this.state.selected_nursery})
           )
         )
