@@ -36,12 +36,10 @@ var Search = React.createClass({
       var places = data.places,
           bounds = new daum.maps.LatLngBounds();
 
-      for(var i=0; i< places.length; i++){
-        var placePosition = new daum.maps.LatLng(places[i].latitude, places[i].longitude);
-        // 검색된 장소 위치를 기준으로 지도 범위를 재설정하기위해
-        // LatLngBounds 객체에 좌표를 추가합니다
-        bounds.extend(placePosition);
-      }
+      // 검색된 장소 위치를 기준으로 지도 범위를 재설정하기위해
+      // LatLngBounds 객체에 좌표를 추가합니다
+      var placePosition = new daum.maps.LatLng(places[0].latitude, places[0].longitude);
+      bounds.extend(placePosition);
       this.props.onBoundsChanged(bounds);
     } else if (status === daum.maps.services.Status.ZERO_RESULT) {
       alert('검색 결과가 존재하지 않습니다.');
@@ -153,6 +151,7 @@ var Map = React.createClass({
 
     if(this.props.bounds){
       this.map.setBounds(this.props.bounds);
+      this.map.setLevel(4);
     }
 
     return (
