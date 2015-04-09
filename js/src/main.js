@@ -18,45 +18,41 @@ var Sidebar = React.createClass({
 
 var Map = React.createClass({
 
-  drawMarker: function(map) {
+  addMarker: function(nursery) {
 
-    // 마커 이미지의 이미지 주소입니다
-    var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-
-    // 마커 이미지의 이미지 크기 입니다
-    var imageSize = new daum.maps.Size(24, 35);
-
-    // 마커 이미지를 생성합니다
-    var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
-
-    // 지도의 현재 영역을 얻어옵니다
-    var bounds = map.getBounds();
-
-    // 영역의 남서쪽 좌표를 얻어옵니다
+    var bounds = this.map.getBounds();
     var swLatLng = bounds.getSouthWest();
-
-    // 영역의 북동쪽 좌표를 얻어옵니다
     var neLatLng = bounds.getNorthEast();
 
-    var onClickMarker = this.props.onClickMarker;
-    $.each(this.props.nurseries, function(idx, nursery){
-        var marker = new daum.maps.Marker({
-          map: map, // 마커를 표시할 지도
-          position: new daum.maps.LatLng(nursery.lat, nursery.lng),
-          clickable: true,
-          title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
-          image : markerImage // 마커 이미지
-        });
+    if(swLatLng.eb > nursery.lat || neLatLng.eb < nursery.lat){
+      return
+    }
+    if(swLatLng.cb > nursery.lng || neLatLng.cb < nursery.lng){
+      return
+    }
 
-        daum.maps.event.addListener(marker, 'click', function(){
-          onClickMarker(nursery)
-        });
+    var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+    var imageSize = new daum.maps.Size(24, 35);
+    var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
+    var marker = new daum.maps.Marker({
+      position: new daum.maps.LatLng(nursery.lat, nursery.lng),
+      clickable: true,
+      title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+      image : markerImage // 마커 이미지
     });
+    self = this;
+    daum.maps.event.addListener(marker, 'click', function () {
+      self.props.onClickMarker(nursery);
+    });
+    marker.setMap(this.map);
+    this.markers.push(marker);
   },
 
-  componentDidUpdate: function() {
-    var map = this.state.map;
-    this.drawMarker(map);
+  componentWillReceiveProps: function(nextProps) {
+    self = this;
+    $.each(nextProps.nurseries, function(idx, nursery){
+      self.addMarker(nursery)
+    });
   },
 
   componentDidMount: function() {
@@ -65,8 +61,8 @@ var Map = React.createClass({
       center: new daum.maps.LatLng(37.5639734199, 127.029808732),
       level: 4
     };
-    var map = new daum.maps.Map(container, options);
-    this.setState({map:map});
+    this.map = new daum.maps.Map(container, options);
+    this.markers = [];
   },
 
   render: function() {
@@ -87,21 +83,33 @@ var NurseryDetail = React.createClass({
   },
   render: function() {
     if (this.props.nursery !== null) {
-      var table =
+      var info_table =
         <table className="table table-striped table-bordered table-hover table-condensed">
-          <tr><td>이름</td><td>{this.props.nursery.name}</td></tr>
-          <tr><td>종류</td><td>{this.props.nursery.type}</td></tr>
+          <tr><td>시설명</td><td>{this.props.nursery.facility_name}</td></tr>
+          <tr><td>시설유형</td><td>{this.props.nursery.cr_type}</td></tr>
+          <tr><td>시설특성</td><td>{this.props.nursery.cr_spec}</td></tr>
+          <tr><td>정원</td><td>{this.props.nursery.fixed_number}</td></tr>
+          <tr><td>현원</td><td>{this.props.nursery.present_number}</td></tr>
+          <tr><td>시설장명</td><td>{this.props.nursery.president_name}</td></tr>
+          <tr><td>개원일</td><td>{this.props.nursery.open_date}</td></tr>
+          <tr><td>차량운행</td><td>{this.props.nursery.vehicle}</td></tr>
+          <tr><td>평가인증유무</td><td>{this.props.nursery.certification}</td></tr>
+          <tr><td>시설전화</td><td>{this.props.nursery.telephone}</td></tr>
           <tr><td>주소</td><td>{this.props.nursery.address}</td></tr>
-          <tr><td>우편번호</td><td>{this.props.nursery.zip_code}</td></tr>
+          <tr><td>정부지원시설</td><td>{this.props.nursery.gov_support}</td></tr>
+          <tr><td>상해보험가입</td><td>{this.props.nursery.accident_insurance}</td></tr>
+          <tr><td>화재보험가입</td><td>{this.props.nursery.fire_insurance}</td></tr>
+          <tr><td>배상보험가입</td><td>{this.props.nursery.compensation_insurance}</td></tr>
           <tr><td>위도</td><td>{this.props.nursery.lat}</td></tr>
           <tr><td>경도</td><td>{this.props.nursery.lng}</td></tr>
+          <tr><td>상세보기</td><td><a href={"http://info.childcare.go.kr/info/pnis/search/preview/SummaryInfoSlPu.jsp?flag=YJ&STCODE_POP=" + this.props.nursery.facility_id}>링크</a></td></tr>
         </table>
     } else {
-      var table = ""
+      var info_table = ""
     }
     return (
       <div className="col-lg-4">
-        {table}
+        {info_table}
       </div>
     )
   }
@@ -135,7 +143,7 @@ var Content = React.createClass({
         url: this.props.url,
         dataType: 'json',
         success: function(data) {
-            this.setState({nurseries:data.nursery});
+            this.setState({nurseries:data});
         }.bind(this),
         error: function(xhr, status, err) {
             console.error(this.props.url, status, err.toString());
