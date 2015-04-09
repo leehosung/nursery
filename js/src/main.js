@@ -15,44 +15,65 @@ var Sidebar = React.createClass({
   }
 });
 
-
 var Map = React.createClass({
 
-  addMarker: function(nursery) {
-
+  inMap: function(lat, lng) {
     var bounds = this.map.getBounds();
     var swLatLng = bounds.getSouthWest();
     var neLatLng = bounds.getNorthEast();
-
-    if(swLatLng.eb > nursery.lat || neLatLng.eb < nursery.lat){
-      return
+    if(swLatLng.eb > lat || neLatLng.eb < lat){
+      return false;
     }
-    if(swLatLng.cb > nursery.lng || neLatLng.cb < nursery.lng){
-      return
+    if(swLatLng.cb > lng || neLatLng.cb < lng){
+      return false;
     }
+    return true;
+  },
 
-    var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-    var imageSize = new daum.maps.Size(24, 35);
-    var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
-    var marker = new daum.maps.Marker({
-      position: new daum.maps.LatLng(nursery.lat, nursery.lng),
-      clickable: true,
-      title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
-      image : markerImage // 마커 이미지
+  // 현재 지도 영역에 포함되지 않는 마커들을 지도에서 제거하고, 포함되는 마커들만 표시합니다.
+  refreshMarker: function() {
+    this.addMarker(self.props.nurseries);
+    var map = this.map;
+    self = this
+    $.each(self.markers.values(), function(i, marker) {
+      var markerPosition = marker.getPosition();
+      if(self.inMap(markerPosition.getLat(), markerPosition.getLng())){
+        marker.setMap(map);
+      } else {
+        marker.setMap(null);
+      }
     });
+  },
+
+  // 현재 영역을 기준으로 지금 까지 추가되지 않은 어린이집 마커를 추가합니다.
+  addMarker: function(nurseries) {
     self = this;
-    daum.maps.event.addListener(marker, 'click', function () {
-      self.props.onClickMarker(nursery);
+    $.each(nurseries, function(idx, nursery){
+      if (self.markers.hasItem(nursery.facility_id)){
+        return true;
+      }
+      if (!self.inMap(nursery.lat, nursery.lng)) {
+        return true;
+      }
+      var imageSrc = "http://i1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+      var imageSize = new daum.maps.Size(24, 35);
+      var markerImage = new daum.maps.MarkerImage(imageSrc, imageSize);
+      var marker = new daum.maps.Marker({
+        position: new daum.maps.LatLng(nursery.lat, nursery.lng),
+        clickable: true,
+        title : nursery.name, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+        image : markerImage // 마커 이미지
+      });
+      daum.maps.event.addListener(marker, 'click', function () {
+        self.props.onClickMarker(nursery);
+      });
+      marker.setMap(self.map);
+      self.markers.setItem(nursery.facility_id, marker);
     });
-    marker.setMap(this.map);
-    this.markers.push(marker);
   },
 
   componentWillReceiveProps: function(nextProps) {
-    self = this;
-    $.each(nextProps.nurseries, function(idx, nursery){
-      self.addMarker(nursery)
-    });
+    this.addMarker(nextProps.nurseries);
   },
 
   componentDidMount: function() {
@@ -61,8 +82,13 @@ var Map = React.createClass({
       center: new daum.maps.LatLng(37.5639734199, 127.029808732),
       level: 4
     };
-    this.map = new daum.maps.Map(container, options);
-    this.markers = [];
+    var map = new daum.maps.Map(container, options);
+    var zoomControl = new daum.maps.ZoomControl();
+    map.addControl(zoomControl, daum.maps.ControlPosition.RIGHT);
+    daum.maps.event.addListener(map, 'zoom_changed', this.refreshMarker);
+    daum.maps.event.addListener(map, 'dragend', this.refreshMarker);
+    this.map = map;
+    this.markers = new HashTable();
   },
 
   render: function() {
